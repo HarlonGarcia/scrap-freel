@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { getFreelances } from './UseCases/freelance/getFreelances.mts';
+import { getFreelances } from './useCases/freelance/getFreelances.mts';
 
 async function routes(instance: FastifyInstance) {
     instance.get('/freelances', getFreelances);
