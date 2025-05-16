@@ -1,19 +1,19 @@
 import puppeteer from 'puppeteer';
 
-export const scrapeFreelas = async (target: string) => {
+export const performScraping = async (target: string) => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
     await page.goto(target);
 
-    const items = await getItemsFrom(page);
+    const freelances = await getItemsFromPage(page);
 
     await browser.close();
 
-    return items;
+    return freelances;
 }
 
-const getItemsFrom = async (page: puppeteer.Page) => {
+const getItemsFromPage = async (page: puppeteer.Page) => {
     const items = await page.$$('.result-item');
     const freelances = [];
 
@@ -28,12 +28,29 @@ const getItemsFrom = async (page: puppeteer.Page) => {
                 };
             }, item); 
 
-            const [createdAt, expiresOn] = await page.$$eval('b[cp-datetime]', elements => elements.map(el => el.getAttribute('cp-datetime'))
-);
+            const [createdAt, expiresOn] = await page.$$eval('b[cp-datetime]', (elements) => {
+                return elements.map((el) => el.getAttribute('cp-datetime'))
+            });
 
+            const allTags = await page.evaluate(
+                (el) => el.querySelector('.information').textContent,
+                item,
+            );
+
+            const tags = allTags.split('Publicado')[0]
+                .split('|')
+                .map((tag) => tag.trim().match(/[^\s].*[^\s]/)?.[0] ?? '')
+                .filter(Boolean);
+
+            const description = await page.evaluate(
+                (el) => el.querySelector('.description').textContent.split('<br>')[0],
+                item,
+            );
 
             const payload = {
                 title,
+                tags,
+                description,
                 originialUrl,
                 createdAt,
                 expiresOn,
