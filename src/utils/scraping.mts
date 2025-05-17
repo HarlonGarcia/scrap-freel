@@ -17,7 +17,7 @@ const getItemsFromPage = async (page: puppeteer.Page) => {
     const items = await page.$$('.result-item');
     const freelances = [];
 
-    for (const item of items) {
+    for (const parentEl of items) {
         try {
             const { title, originialUrl } = await page.evaluate(el => {
                 const titleEl = el.querySelector('.title > a');
@@ -26,7 +26,7 @@ const getItemsFromPage = async (page: puppeteer.Page) => {
                     title: titleEl?.textContent,
                     originialUrl: titleEl.getAttribute('href'),
                 };
-            }, item); 
+            }, parentEl); 
 
             const [createdAt, expiresOn] = await page.$$eval('b[cp-datetime]', (elements) => {
                 return elements.map((el) => el.getAttribute('cp-datetime'));
@@ -34,7 +34,7 @@ const getItemsFromPage = async (page: puppeteer.Page) => {
 
             const allTags = await page.evaluate(
                 (el) => el.querySelector('.information').textContent.split('Publicado')[0],
-                item,
+                parentEl,
             );
 
             const tags = allTags
@@ -43,20 +43,22 @@ const getItemsFromPage = async (page: puppeteer.Page) => {
                 .filter(Boolean);
 
             const description = await page.evaluate(
-                (el) => el.querySelector('.description').textContent.split('<br>')[0],
-                item,
+                (el) => el.querySelector('.description').textContent
+                    .split('<br>')[0]
+                    .replace(/(\.\.\.|…)?\s*(Expandir|Esconder)\b/gi, '')
+                    .replace(/\s{2,}/g, ' ')
+                    .trim(),
+                parentEl,
             );
-
-            const payload = {
+      
+            freelances.push({
                 title,
                 tags,
                 description,
                 originialUrl,
                 createdAt,
                 expiresOn,
-            };      
-      
-            freelances.push(payload);
+            });
         } catch (error) {
             console.error('Error while scraping items:', error);
         }
