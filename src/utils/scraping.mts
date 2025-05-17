@@ -29,15 +29,15 @@ const getItemsFromPage = async (page: puppeteer.Page) => {
             }, item); 
 
             const [createdAt, expiresOn] = await page.$$eval('b[cp-datetime]', (elements) => {
-                return elements.map((el) => el.getAttribute('cp-datetime'))
+                return elements.map((el) => el.getAttribute('cp-datetime'));
             });
 
             const allTags = await page.evaluate(
-                (el) => el.querySelector('.information').textContent,
+                (el) => el.querySelector('.information').textContent.split('Publicado')[0],
                 item,
             );
 
-            const tags = allTags.split('Publicado')[0]
+            const tags = allTags
                 .split('|')
                 .map((tag) => tag.trim().match(/[^\s].*[^\s]/)?.[0] ?? '')
                 .filter(Boolean);
